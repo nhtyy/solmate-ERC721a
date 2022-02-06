@@ -214,6 +214,7 @@ abstract contract ERC721 {
     ) internal virtual {
 
         require(to != address(0));
+        require(amount != 0);
         require( prove(to, amount, proof) );
 
         // can only overflow if # of tokens > 2**256
