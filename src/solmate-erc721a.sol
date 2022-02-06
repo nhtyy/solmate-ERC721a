@@ -42,7 +42,7 @@ abstract contract ERC721 {
 
     uint internal currentId = 1;
 
-    bytes public MERKLE_ROOT;
+    bytes32 public MERKLE_ROOT;
 
     mapping(address => uint256) public balanceOf;
 
@@ -56,7 +56,7 @@ abstract contract ERC721 {
                               CONSTRUCTOR
     //////////////////////////////////////////////////////////////*/
 
-    constructor(string memory _name, string memory _symbol, bytes memory _MERKLE) {
+    constructor(string memory _name, string memory _symbol, bytes32 _MERKLE) {
 
         name = _name;
         symbol = _symbol;
@@ -179,28 +179,10 @@ abstract contract ERC721 {
 
         }
 
-    function safeTransferFrom(
-        address from,
-        address to,
-        uint256 id,
-        bytes memory data
-    ) public virtual {
-
-        transferFrom(from, to, id);
-
-        require(
-            to.code.length == 0 ||
-                ERC721TokenReceiver(to).onERC721Received(msg.sender, from, id, data) ==
-                ERC721TokenReceiver.onERC721Received.selector,
-            "UNSAFE_RECIPIENT"
-        );
-
-    }
-
     function safeMint(
         address to,
         uint256 amount,
-        bytes[] calldata proof
+        bytes32[] calldata proof
     ) public virtual {
 
         _mint(to, amount, proof, true);
@@ -224,7 +206,13 @@ abstract contract ERC721 {
     //////////////////////////////////////////////////////////////*/
 
     // bool safe == safe mint
-    function _mint(address to, uint256 amount, bytes[] calldata proof, bool safe) internal virtual {
+    function _mint(
+        address to, 
+        uint256 amount, 
+        bytes32[] calldata proof, 
+        bool safe
+    ) internal virtual {
+
         require(to != address(0));
         require( prove(to, amount, proof) );
 
@@ -261,11 +249,28 @@ abstract contract ERC721 {
                        MERKLE TREE VERIFICATION
     //////////////////////////////////////////////////////////////*/
 
-    function prove(address who, uint amount, bytes[] calldata proof) 
+    function prove(address who, uint amount, bytes32[] memory proof) 
         internal view returns (bool) {
 
-            
+            Proof memory _proof = Proof(who, amount);
+            bytes32 leaf = keccak256(abi.encode(_proof));
+            bytes32 root = MERKLE_ROOT;
+            bytes32 computedHash = leaf;
 
+            for (uint256 i = 0; i < proof.length; i++) {
+                bytes32 proofElement = proof[i];
+
+                if (computedHash <= proofElement) {
+                    // Hash(current computed hash + current element of the proof)
+                    computedHash = keccak256(abi.encodePacked(computedHash, proofElement));
+                } else {
+                    // Hash(current element of the proof + current computed hash)
+                    computedHash = keccak256(abi.encodePacked(proofElement, computedHash));
+                }
+            }
+
+            // Check if the computed hash (root) is equal to the provided root
+            return computedHash == root;
     }
 }
 
