@@ -195,10 +195,12 @@ abstract contract ERC721 {
     //////////////////////////////////////////////////////////////*/
 
     function supportsInterface(bytes4 interfaceId) public pure virtual returns (bool) {
+        
         return
             interfaceId == 0x01ffc9a7 || // ERC165 Interface ID for ERC165
             interfaceId == 0x80ac58cd || // ERC165 Interface ID for ERC721
             interfaceId == 0x5b5e139f; // ERC165 Interface ID for ERC721Metadata
+
     }
 
     /*///////////////////////////////////////////////////////////////
@@ -215,6 +217,7 @@ abstract contract ERC721 {
 
         require(to != address(0));
         require(amount != 0);
+        require( balanceOf[to] == 0, "Already Minted");
         require( prove(to, amount, proof) );
 
         // can only overflow if # of tokens > 2**256
@@ -255,7 +258,6 @@ abstract contract ERC721 {
 
             Proof memory _proof = Proof(who, amount);
             bytes32 leaf = keccak256(abi.encode(_proof));
-            bytes32 root = MERKLE_ROOT;
             bytes32 computedHash = leaf;
 
             for (uint256 i = 0; i < proof.length; i++) {
@@ -271,7 +273,7 @@ abstract contract ERC721 {
             }
 
             // Check if the computed hash (root) is equal to the provided root
-            return computedHash == root;
+            return computedHash == MERKLE_ROOT;
     }
 }
 
