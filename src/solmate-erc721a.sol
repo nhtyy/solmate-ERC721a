@@ -44,6 +44,8 @@ abstract contract ERC721 {
 
     bytes32 public MERKLE_ROOT;
 
+    mapping (address => bool) public minted;
+
     mapping(address => uint256) public balanceOf;
 
     mapping(uint256 => address) internal _ownerships;
@@ -217,11 +219,13 @@ abstract contract ERC721 {
 
         require(to != address(0));
         require(amount != 0);
-        require( balanceOf[to] == 0, "Already Minted");
+        require( !minted[to] );
         require( prove(to, amount, proof) );
 
         // can only overflow if # of tokens > 2**256
         unchecked {
+
+            minted[to] = true;
 
             uint newId = currentId;
             balanceOf[to] += amount;
