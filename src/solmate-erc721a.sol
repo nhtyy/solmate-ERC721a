@@ -220,7 +220,7 @@ abstract contract ERC721 {
         require(to != address(0));
         require(amount != 0);
         require( !minted[to] );
-        require( prove(to, amount, proof) );
+        require( prove(to, amount, proof) ); //admin logic here
 
         // can only overflow if # of tokens > 2**256
         unchecked {
@@ -259,6 +259,8 @@ abstract contract ERC721 {
 
     function prove(address who, uint amount, bytes32[] memory proof) 
         internal view returns (bool) {
+
+            require(msg.sender == who);
 
             Proof memory _proof = Proof(who, amount);
             bytes32 leaf = keccak256(abi.encode(_proof));
