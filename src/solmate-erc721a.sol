@@ -4,6 +4,7 @@ pragma solidity >=0.8.0;
 /// @notice Modern, minimalist, and gas efficient ERC-721 implementation.
 /// @author Solmate (https://github.com/Rari-Capital/solmate/blob/main/src/tokens/ERC721.sol)
 /// @dev Note that balanceOf does not revert if passed the zero address, in defiance of the ERC.
+///           We also dont do 0 checks for mints
 ///           tokenIds are enumerable and we assume they start at 1
 abstract contract ERC721 {
 
@@ -109,8 +110,10 @@ abstract contract ERC721 {
             msg.sender == getApproved[id]
         );
         
-        require(prevOwner == from);
-        require(to != address(0));
+        require(
+            prevOwner == from &&
+            to != address(0)
+        );
 
         delete getApproved[id];
 
@@ -217,10 +220,10 @@ abstract contract ERC721 {
         bool safe
     ) internal virtual {
 
-        require(to != address(0));
-        require(amount != 0);
-        require( !minted[to] );
-        require( prove(to, amount, proof) ); //admin logic here
+        require(
+            !minted[to] &&
+            prove(to, amount, proof)
+        );
 
         // can only overflow if # of tokens > 2**256
         unchecked {
